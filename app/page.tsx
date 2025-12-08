@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { gensetSizes, type RoiInputs, type RoiOutputs } from "./lib/roi";
 
 const defaultInputs: RoiInputs = {
@@ -20,6 +20,17 @@ export default function Home() {
   const [results, setResults] = useState<RoiOutputs | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Simple responsive detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // run once on mount
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleNumberChange =
     (field: keyof RoiInputs) =>
@@ -76,7 +87,7 @@ export default function Home() {
     <main
       style={{
         minHeight: "100vh",
-        padding: "2rem",
+        padding: isMobile ? "1rem" : "2rem",
         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
         background: "#0f172a",
         color: "#e5e7eb",
@@ -88,15 +99,15 @@ export default function Home() {
             BESS ROI Calculator
           </h1>
           <p style={{ marginTop: "0.5rem", color: "#9ca3af" }}>
-            Full-load strategy with genset fuel curve interpolation and
-            calculated BESS cycles.
+            Full-load strategy using genset fuel curves and calculated BESS
+            cycles.
           </p>
         </header>
 
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: "1.1fr 1.2fr",
+            gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1.2fr",
             gap: "1.5rem",
             alignItems: "flex-start",
           }}
@@ -124,7 +135,7 @@ export default function Home() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
                 gap: "0.75rem 1rem",
               }}
             >
@@ -209,6 +220,7 @@ export default function Home() {
             <div
               style={{
                 display: "flex",
+                flexDirection: isMobile ? "column" : "row",
                 gap: "0.75rem",
                 marginTop: "1.5rem",
               }}
@@ -264,8 +276,8 @@ export default function Home() {
                 color: "#6b7280",
               }}
             >
-              * This is an engineering estimate. Actual performance depends on
-              real load profiles, genset behaviour and BESS configuration.
+              * Engineering estimate only. Real performance depends on actual
+              load profiles, genset behaviour and BESS configuration.
             </p>
           </form>
 
@@ -309,7 +321,7 @@ export default function Home() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
+                      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
                       gap: "1rem",
                       fontSize: "0.95rem",
                       marginBottom: "1.25rem",
@@ -323,7 +335,7 @@ export default function Home() {
                     <ResultCard
                       title="BESS cycles per day"
                       value={results.bessCyclesPerDay.toFixed(3)}
-                      subtitle="Calculated from surplus energy & SOC window"
+                      subtitle="Calculated from surplus & SOC window"
                     />
                     <ResultCard
                       title="Annual fuel (diesel only)"
@@ -505,8 +517,8 @@ function ResultCard({ title, value, subtitle }: ResultCardProps) {
         padding: "0.9rem",
         borderRadius: "0.75rem",
         border: "1px solid #1f2937",
-background:
-  "radial-gradient(circle at top left, #0f766e33 0, #020617 55%)",
+        background:
+          "radial-gradient(circle at top left, #0f766e33 0, #020617 55%)",
       }}
     >
       <div style={{ fontSize: "0.8rem", color: "#9ca3af" }}>{title}</div>
