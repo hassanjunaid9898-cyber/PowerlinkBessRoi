@@ -1,7 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { gensetSizes, type RoiInputs, type RoiOutputs } from "./lib/roi";
+import {
+  gensetSizes,
+  type RoiInputs,
+  type RoiOutputs,
+} from "./lib/roi";
+
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 const defaultInputs: RoiInputs = {
   gensetKVA: 125,
@@ -378,6 +396,9 @@ export default function Home() {
                     />
                   </div>
 
+                  {/* Charts */}
+                  <ChartsSection results={results} isMobile={isMobile} />
+
                   {/* Detailed table */}
                   <div>
                     <h3
@@ -573,5 +594,136 @@ function DetailRow({ label, value }: DetailRowProps) {
         {value}
       </td>
     </tr>
+  );
+}
+
+type ChartsSectionProps = {
+  results: RoiOutputs;
+  isMobile: boolean;
+};
+
+function ChartsSection({ results, isMobile }: ChartsSectionProps) {
+  const baselineCost = results.annualFuelOnlyCost;
+  const savings = results.annualFuelSavingsCost;
+  const costWithBess = Math.max(baselineCost - savings, 0);
+
+  const pieData = [
+    { name: "Fuel cost with BESS", value: costWithBess },
+    { name: "Fuel savings", value: savings },
+  ];
+
+  const barData = [
+    {
+      name: "Annual fuel cost",
+      Baseline: baselineCost,
+      "With BESS": costWithBess,
+    },
+  ];
+
+  const COLORS = ["#22c55e", "#f97316"];
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+        gap: "1.25rem",
+        marginBottom: "1.5rem",
+      }}
+    >
+      {/* Pie chart: savings vs remaining cost */}
+      <div
+        style={{
+          background: "#020617",
+          borderRadius: "0.75rem",
+          border: "1px solid #1f2937",
+          padding: "0.75rem",
+          minHeight: 260,
+        }}
+      >
+        <div
+          style={{
+            fontSize: "0.9rem",
+            fontWeight: 600,
+            marginBottom: "0.5rem",
+          }}
+        >
+          Fuel cost vs savings (annual)
+        </div>
+        <ResponsiveContainer width="100%" height={210}>
+          <PieChart>
+            <Pie
+              data={pieData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={70}
+              label={(entry: any) =>
+                `${entry.name}: ${(entry.percent * 100).toFixed(0)}%`
+              }
+            >
+              {pieData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value: any) => {
+                const v = Number(value);
+                return `$${v.toLocaleString(undefined, {
+                  maximumFractionDigits: 0,
+                })}/year`;
+              }}
+            />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Bar chart: baseline vs with BESS */}
+      <div
+        style={{
+          background: "#020617",
+          borderRadius: "0.75rem",
+          border: "1px solid #1f2937",
+          padding: "0.75rem",
+          minHeight: 260,
+        }}
+      >
+        <div
+          style={{
+            fontSize: "0.9rem",
+            fontWeight: 600,
+            marginBottom: "0.5rem",
+          }}
+        >
+          Annual fuel cost comparison
+        </div>
+        <ResponsiveContainer width="100%" height={210}>
+          <BarChart data={barData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#111827" />
+            <XAxis dataKey="name" stroke="#9ca3af" />
+            <YAxis
+              stroke="#9ca3af"
+              tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
+            />
+            <Tooltip
+              formatter={(value: any) => {
+                const v = Number(value);
+                return `$${v.toLocaleString(undefined, {
+                  maximumFractionDigits: 0,
+                })}/year`;
+              }}
+            />
+            <Legend />
+            <Bar dataKey="Baseline" fill="#f97316" />
+            <Bar dataKey="With BESS" fill="#22c55e" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
