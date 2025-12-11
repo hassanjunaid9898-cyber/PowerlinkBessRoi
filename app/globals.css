@@ -1,8 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&family=Roboto+Slab:wght@400&display=swap");
 
-/* =========================
-   Powerlink Theme Variables
-   ========================= */
+/* =================================================
+   POWERLINK THEME VARIABLES
+   ================================================= */
 :root {
   --pl-primary: #6ec1e4;
   --pl-secondary: #54595f;
@@ -26,17 +26,17 @@
   --heading: #022269;
 
   --shadow: 0 10px 30px rgba(2, 34, 105, 0.08);
-
   --radius: 14px;
 }
 
+/* ================= DARK MODE ================= */
 html[data-theme="dark"] {
   --bg: #071021;
   --bg-soft: #0b1730;
   --card: #0b1730;
 
-  --border: rgba(110, 193, 228, 0.18);
-  --border-strong: rgba(110, 193, 228, 0.28);
+  --border: rgba(110, 193, 228, 0.22);
+  --border-strong: rgba(110, 193, 228, 0.35);
 
   --text: #e7eef8;
   --text-muted: rgba(231, 238, 248, 0.7);
@@ -45,6 +45,9 @@ html[data-theme="dark"] {
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
+/* =================================================
+   BASE RESET
+   ================================================= */
 * {
   box-sizing: border-box;
 }
@@ -57,12 +60,13 @@ body {
   line-height: 1.55;
 }
 
-/* =========================
-   Layout
-   ========================= */
+/* =================================================
+   PAGE LAYOUT
+   ================================================= */
 .page {
   min-height: 100vh;
-  background: radial-gradient(
+  background:
+    radial-gradient(
       circle at 20% -20%,
       rgba(110, 193, 228, 0.25),
       transparent 55%
@@ -95,13 +99,12 @@ body {
 .header p {
   margin: 8px 0 0;
   color: var(--text-muted);
-  max-width: 640px;
+  max-width: 680px;
 }
 
 .header-actions {
   display: flex;
   gap: 10px;
-  align-items: center;
   flex-wrap: wrap;
 }
 
@@ -111,11 +114,16 @@ body {
   align-items: start;
 }
 
-/* =========================
-   Cards
-   ========================= */
+/* =================================================
+   CARDS
+   ================================================= */
 .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.4)),
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.75),
+      rgba(255, 255, 255, 0.4)
+    ),
     var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -124,7 +132,8 @@ body {
 }
 
 html[data-theme="dark"] .card {
-  background: linear-gradient(
+  background:
+    linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.04),
       rgba(255, 255, 255, 0.01)
@@ -143,9 +152,9 @@ html[data-theme="dark"] .card {
   color: var(--text-muted);
 }
 
-/* =========================
-   Forms
-   ========================= */
+/* =================================================
+   FORMS
+   ================================================= */
 .form-grid {
   display: grid;
   gap: 12px;
@@ -163,30 +172,61 @@ label span {
   font-weight: 500;
 }
 
+/* Inputs */
 input,
 select {
   width: 100%;
   padding: 11px 12px;
   border-radius: 10px;
   border: 1px solid var(--border-strong);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   color: var(--text);
   font-size: 14px;
 }
 
+/* DARK MODE INPUTS */
 html[data-theme="dark"] input,
 html[data-theme="dark"] select {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text);
 }
 
+/* FOCUS */
 input:focus,
 select:focus {
   outline: none;
   border-color: var(--pl-primary);
-  box-shadow: 0 0 0 4px rgba(110, 193, 228, 0.2);
+  box-shadow: 0 0 0 4px rgba(110, 193, 228, 0.25);
 }
 
+/* ===== FIX WHITE DROPDOWN ISSUE ===== */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 55%,
+    calc(100% - 12px) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+select option {
+  background: var(--card);
+  color: var(--text);
+}
+
+html[data-theme="dark"] select option {
+  background: #0b1730 !important;
+  color: var(--text) !important;
+}
+
+/* =================================================
+   BUTTONS
+   ================================================= */
 .actions {
   display: flex;
   gap: 10px;
@@ -205,8 +245,12 @@ select:focus {
 
 .btn-primary {
   border: none;
-  color: white;
-  background: linear-gradient(90deg, var(--pl-blue-strong), var(--pl-blue));
+  color: #ffffff;
+  background: linear-gradient(
+    90deg,
+    var(--pl-blue-strong),
+    var(--pl-blue)
+  );
 }
 
 .btn-primary:disabled {
@@ -220,19 +264,9 @@ select:focus {
   color: var(--text);
 }
 
-html[data-theme="dark"] .btn-outline {
-  color: var(--text);
-}
-
-.error {
-  margin-top: 12px;
-  color: #b91c1c;
-  font-size: 14px;
-}
-
-/* =========================
-   Results Hero Metrics
-   ========================= */
+/* =================================================
+   HERO METRICS
+   ================================================= */
 .hero-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -248,7 +282,7 @@ html[data-theme="dark"] .btn-outline {
 }
 
 html[data-theme="dark"] .hero {
-  background: rgba(110, 193, 228, 0.12);
+  background: rgba(110, 193, 228, 0.14);
 }
 
 .hero .k {
@@ -270,9 +304,9 @@ html[data-theme="dark"] .hero {
   color: var(--text-muted);
 }
 
-/* =========================
-   Charts + Table
-   ========================= */
+/* =================================================
+   CHARTS + TABLE
+   ================================================= */
 .charts {
   display: grid;
   gap: 12px;
@@ -283,13 +317,13 @@ html[data-theme="dark"] .hero {
 .chart-card {
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.75);
   padding: 12px;
-  min-height: 290px;
+  min-height: 300px;
 }
 
 html[data-theme="dark"] .chart-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .chart-title {
@@ -327,9 +361,9 @@ td:last-child {
   font-variant-numeric: tabular-nums;
 }
 
-/* =========================
-   Responsive
-   ========================= */
+/* =================================================
+   RESPONSIVE
+   ================================================= */
 @media (max-width: 900px) {
   .hero-grid {
     grid-template-columns: 1fr;
@@ -339,26 +373,10 @@ td:last-child {
   }
 }
 
-/* =========================
-   Print / PDF
-   ========================= */
+/* =================================================
+   PRINT / PDF (CLEAN + WITH CHARTS)
+   ================================================= */
 @media print {
-  html[data-theme="dark"] {
-    /* force readable print */
-    --bg: #ffffff;
-    --card: #ffffff;
-    --text: #000000;
-    --text-muted: #333333;
-    --heading: #000000;
-    --border: #cccccc;
-    --border-strong: #bbbbbb;
-    --shadow: none;
-  }
-
-  .no-print {
-    display: none !important;
-  }
-
   body {
     background: #ffffff !important;
     color: #000000 !important;
@@ -368,13 +386,22 @@ td:last-child {
     background: #ffffff !important;
   }
 
-  .card {
+  .no-print {
+    display: none !important;
+  }
+
+  .card,
+  .chart-card {
+    background: #ffffff !important;
     box-shadow: none !important;
     border: 1px solid #cccccc !important;
   }
 
-  .charts {
-    display: none !important; /* charts are usually not needed in client PDF */
+  table,
+  tr,
+  td {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .container {
