@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  gensetSizes,
-  type RoiInputs,
-  type RoiOutputs,
-} from "./lib/roi";
+import { gensetSizes, type RoiInputs, type RoiOutputs } from "./lib/roi";
 
 import {
   PieChart,
@@ -33,39 +29,47 @@ const defaultInputs: RoiInputs = {
   socMin: 0.2,
 };
 
+function formatMoney(n: number) {
+  if (!Number.isFinite(n)) return "N/A";
+  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
 export default function Home() {
   const [inputs, setInputs] = useState<RoiInputs>(defaultInputs);
   const [results, setResults] = useState<RoiOutputs | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  // Simple responsive detection
+  // theme
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize(); // run once on mount
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const stored = localStorage.getItem("theme") as "light" | "dark" | null;
+    if (stored) setTheme(stored);
+  }, []);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  // responsive
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 900);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const handleNumberChange =
     (field: keyof RoiInputs) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = Number(e.target.value);
-      setInputs((prev) => ({
-        ...prev,
-        [field]: Number.isNaN(value) ? 0 : value,
-      }));
+      setInputs((prev) => ({ ...prev, [field]: Number.isNaN(value) ? 0 : value }));
     };
 
   const handleGensetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(e.target.value);
-    setInputs((prev) => ({
-      ...prev,
-      gensetKVA: value,
-    }));
+    setInputs((prev) => ({ ...prev, gensetKVA: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,11 +85,9 @@ export default function Home() {
       });
 
       const data = await res.json();
-
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Calculation failed");
       }
-
       setResults(data.result as RoiOutputs);
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong");
@@ -101,86 +103,48 @@ export default function Home() {
     setError(null);
   };
 
+  const handlePrint = () => window.print();
+
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        padding: isMobile ? "1rem" : "2rem",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-        background: "#0f172a",
-        color: "#e5e7eb",
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <header style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "2rem", fontWeight: 700 }}>
-            BESS ROI Calculator
-          </h1>
-          <p style={{ marginTop: "0.5rem", color: "#9ca3af" }}>
-            Full-load strategy using genset fuel curves and calculated BESS
-            cycles.
-          </p>
+    <main className="page">
+      <div className="container">
+        <header className="header no-print">
+          <div>
+            <h1>BESS ROI Calculator</h1>
+            <p>
+              Full-load genset + BESS optimisation using interpolated fuel curves. Engineering estimate for
+              feasibility and pre-sales modelling.
+            </p>
+          </div>
+
+          <div className="header-actions">
+            <button
+              className="btn-outline"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              {theme === "light" ? "Dark mode" : "Light mode"}
+            </button>
+
+            <button className="btn-primary" onClick={handlePrint}>
+              Export PDF
+            </button>
+          </div>
         </header>
 
         <section
+          className="grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1.2fr",
-            gap: "1.5rem",
-            alignItems: "flex-start",
+            gridTemplateColumns: isMobile ? "1fr" : "420px 1fr",
           }}
         >
-          {/* Inputs */}
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              background: "#020617",
-              padding: "1.5rem",
-              borderRadius: "1rem",
-              border: "1px solid #1f2937",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "1.1rem",
-                fontWeight: 600,
-                marginBottom: "1rem",
-              }}
-            >
-              Inputs
-            </h2>
+          {/* INPUTS */}
+          <form className="card" onSubmit={handleSubmit}>
+            <h2>Inputs</h2>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-                gap: "0.75rem 1rem",
-              }}
-            >
-              {/* Genset dropdown */}
-              <label style={{ fontSize: "0.85rem" }}>
-                <span
-                  style={{
-                    display: "block",
-                    marginBottom: "0.2rem",
-                    color: "#9ca3af",
-                  }}
-                >
-                  Genset rating (kVA)
-                </span>
-                <select
-                  value={inputs.gensetKVA}
-                  onChange={handleGensetChange}
-                  style={{
-                    width: "100%",
-                    padding: "0.4rem 0.5rem",
-                    borderRadius: "0.5rem",
-                    border: "1px solid #374151",
-                    background: "#020617",
-                    color: "#e5e7eb",
-                    fontSize: "0.9rem",
-                  }}
-                >
+            <div className="form-grid">
+              <label>
+                <span>Genset rating (kVA)</span>
+                <select value={inputs.gensetKVA} onChange={handleGensetChange}>
                   {gensetSizes.map((size) => (
                     <option key={size} value={size}>
                       {size}
@@ -189,297 +153,92 @@ export default function Home() {
                 </select>
               </label>
 
-              <InputField
-                label="Average load (kVA)"
-                value={inputs.loadKVA}
-                onChange={handleNumberChange("loadKVA")}
-              />
-              <InputField
-                label="Power factor"
-                value={inputs.powerFactor}
-                step="0.01"
-                onChange={handleNumberChange("powerFactor")}
-              />
-              <InputField
-                label="Operating hours per day"
-                value={inputs.hoursPerDay}
-                onChange={handleNumberChange("hoursPerDay")}
-              />
-              <InputField
-                label="Diesel price ($/L)"
-                value={inputs.dieselPricePerL}
-                step="0.01"
-                onChange={handleNumberChange("dieselPricePerL")}
-              />
-              <InputField
-                label="BESS size (kWh)"
-                value={inputs.bessSizeKWh}
-                onChange={handleNumberChange("bessSizeKWh")}
-              />
-              <InputField
-                label="BESS price ($/kWh)"
-                value={inputs.bessPricePerKWh}
-                onChange={handleNumberChange("bessPricePerKWh")}
-              />
-              <InputField
-                label="BESS SOC max (0–1)"
-                value={inputs.socMax}
-                step="0.01"
-                onChange={handleNumberChange("socMax")}
-              />
-              <InputField
-                label="BESS SOC min (0–1)"
-                value={inputs.socMin}
-                step="0.01"
-                onChange={handleNumberChange("socMin")}
-              />
+              <InputField label="Average load (kVA)" value={inputs.loadKVA} onChange={handleNumberChange("loadKVA")} />
+              <InputField label="Power factor" value={inputs.powerFactor} step="0.01" onChange={handleNumberChange("powerFactor")} />
+              <InputField label="Operating hours per day" value={inputs.hoursPerDay} onChange={handleNumberChange("hoursPerDay")} />
+              <InputField label="Diesel price ($/L)" value={inputs.dieselPricePerL} step="0.01" onChange={handleNumberChange("dieselPricePerL")} />
+              <InputField label="BESS size (kWh)" value={inputs.bessSizeKWh} onChange={handleNumberChange("bessSizeKWh")} />
+              <InputField label="BESS price ($/kWh)" value={inputs.bessPricePerKWh} onChange={handleNumberChange("bessPricePerKWh")} />
+              <InputField label="BESS SOC max (0–1)" value={inputs.socMax} step="0.01" onChange={handleNumberChange("socMax")} />
+              <InputField label="BESS SOC min (0–1)" value={inputs.socMin} step="0.01" onChange={handleNumberChange("socMin")} />
+
+              <div className="actions">
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? "Calculating…" : "Calculate ROI"}
+                </button>
+                <button type="button" className="btn-outline" onClick={handleReset}>
+                  Reset
+                </button>
+              </div>
+
+              {error && <div className="error">{error}</div>}
+              <div className="muted" style={{ fontSize: 12 }}>
+                * Engineering estimate only. Real performance depends on actual load profiles, genset behaviour and BESS configuration.
+              </div>
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                gap: "0.75rem",
-                marginTop: "1.5rem",
-              }}
-            >
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "999px",
-                  border: "none",
-                  background: "#22c55e",
-                  color: "#022c22",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  opacity: loading ? 0.7 : 1,
-                }}
-              >
-                {loading ? "Calculating..." : "Calculate ROI"}
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "999px",
-                  border: "1px solid #4b5563",
-                  background: "transparent",
-                  color: "#e5e7eb",
-                  cursor: "pointer",
-                }}
-              >
-                Reset
-              </button>
-            </div>
-
-            {error && (
-              <p
-                style={{
-                  marginTop: "1rem",
-                  color: "#fecaca",
-                  fontSize: "0.9rem",
-                }}
-              >
-                {error}
-              </p>
-            )}
-
-            <p
-              style={{
-                marginTop: "1rem",
-                fontSize: "0.8rem",
-                color: "#6b7280",
-              }}
-            >
-              * Engineering estimate only. Real performance depends on actual
-              load profiles, genset behaviour and BESS configuration.
-            </p>
           </form>
 
-          {/* Results */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-            }}
-          >
-            <div
-              style={{
-                background: "#020617",
-                padding: "1.5rem",
-                borderRadius: "1rem",
-                border: "1px solid #1f2937",
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
-                  marginBottom: "1rem",
-                }}
-              >
-                Results
-              </h2>
+          {/* RESULTS */}
+          <div className="card">
+            <h2>Results</h2>
 
-              {!results && (
-                <p style={{ color: "#9ca3af", fontSize: "0.95rem" }}>
-                  Enter your parameters and click{" "}
-                  <strong>Calculate ROI</strong> to see estimated savings and
-                  payback.
-                </p>
-              )}
+            {!results && (
+              <div className="muted">
+                Enter your parameters and click <strong>Calculate ROI</strong> to see estimated savings and payback.
+              </div>
+            )}
 
-              {results && (
-                <>
-                  {/* Summary cards */}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-                      gap: "1rem",
-                      fontSize: "0.95rem",
-                      marginBottom: "1.25rem",
-                    }}
-                  >
-                    <ResultCard
-                      title="Load %"
-                      value={`${(results.loadPct * 100).toFixed(1)} %`}
-                      subtitle={`Load: ${results.loadKW.toFixed(1)} kW`}
-                    />
-                    <ResultCard
-                      title="BESS cycles per day"
-                      value={results.bessCyclesPerDay.toFixed(3)}
-                      subtitle="Calculated from surplus & SOC window"
-                    />
-                    <ResultCard
-                      title="Annual fuel (diesel only)"
-                      value={`${results.annualFuelOnlyLitres.toFixed(0)} L`}
-                      subtitle={`≈ $${results.annualFuelOnlyCost
-                        .toFixed(0)
-                        .toString()}/year`}
-                    />
-                    <ResultCard
-                      title="Annual fuel saved"
-                      value={`${results.annualFuelSavingsLitres
-                        .toFixed(0)
-                        .toString()} L`}
-                      subtitle={`≈ $${results.annualFuelSavingsCost
-                        .toFixed(0)
-                        .toString()}/year`}
-                    />
-                    <ResultCard
-                      title="BESS CAPEX"
-                      value={`$${results.capex.toFixed(0).toString()}`}
-                      subtitle="BESS size × price per kWh"
-                    />
-                    <ResultCard
-                      title="Simple payback"
-                      value={
-                        results.paybackYears
-                          ? `${results.paybackYears.toFixed(1)} years`
-                          : "N/A"
-                      }
-                      subtitle="Capex / annual fuel savings"
-                    />
-                    <ResultCard
-                      title="5-year simple ROI"
-                      value={
-                        results.simpleFiveYearROI !== null
-                          ? `${results.simpleFiveYearROI.toFixed(0)} %`
-                          : "N/A"
-                      }
-                      subtitle="(5y savings – capex) / capex"
-                    />
+            {results && (
+              <>
+                {/* HERO METRICS */}
+                <div className="hero-grid">
+                  <div className="hero">
+                    <div className="k">Annual fuel savings</div>
+                    <div className="v">${formatMoney(results.annualFuelSavingsCost)}</div>
+                    <div className="s">≈ {formatMoney(results.annualFuelSavingsLitres)} L/year saved</div>
                   </div>
 
-                  {/* Charts */}
-                  <ChartsSection results={results} isMobile={isMobile} />
-
-                  {/* Detailed table */}
-                  <div>
-                    <h3
-                      style={{
-                        fontSize: "0.95rem",
-                        fontWeight: 600,
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      Detailed metrics
-                    </h3>
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: "0.85rem",
-                      }}
-                    >
-                      <tbody>
-                        <DetailRow
-                          label="Load %"
-                          value={`${(results.loadPct * 100).toFixed(1)} %`}
-                        />
-                        <DetailRow
-                          label="Load (kW)"
-                          value={results.loadKW.toFixed(2)}
-                        />
-                        <DetailRow
-                          label="Fuel use (L/h) – interpolated"
-                          value={results.fuelLph.toFixed(4)}
-                        />
-                        <DetailRow
-                          label="Annual fuel use (L)"
-                          value={results.annualFuelOnlyLitres.toFixed(2)}
-                        />
-                        <DetailRow
-                          label="Annual fuel cost ($)"
-                          value={results.annualFuelOnlyCost.toFixed(2)}
-                        />
-                        <DetailRow
-                          label="Diesel kWh per L"
-                          value={results.dieselKWhPerL.toFixed(9)}
-                        />
-                        <DetailRow
-                          label="Daily BESS energy used (kWh)"
-                          value={results.dailyBESSEnergyKWh.toFixed(3)}
-                        />
-                        <DetailRow
-                          label="Fuel saved per day (L)"
-                          value={results.fuelSavedPerDayLitres.toFixed(3)}
-                        />
-                        <DetailRow
-                          label="Annual fuel saved (L)"
-                          value={results.annualFuelSavingsLitres.toFixed(2)}
-                        />
-                        <DetailRow
-                          label="Annual fuel savings ($)"
-                          value={results.annualFuelSavingsCost.toFixed(2)}
-                        />
-                        <DetailRow
-                          label="BESS cycles per day"
-                          value={results.bessCyclesPerDay.toFixed(9)}
-                        />
-                        <DetailRow
-                          label="BESS CAPEX ($)"
-                          value={results.capex.toFixed(2)}
-                        />
-                        <DetailRow
-                          label="ROI (years)"
-                          value={
-                            results.paybackYears
-                              ? results.paybackYears.toFixed(8)
-                              : "N/A"
-                          }
-                        />
-                      </tbody>
-                    </table>
+                  <div className="hero">
+                    <div className="k">Simple payback</div>
+                    <div className="v">
+                      {results.paybackYears ? `${results.paybackYears.toFixed(1)} yrs` : "N/A"}
+                    </div>
+                    <div className="s">Capex / annual fuel savings</div>
                   </div>
-                </>
-              )}
-            </div>
+
+                  <div className="hero">
+                    <div className="k">BESS CAPEX</div>
+                    <div className="v">${formatMoney(results.capex)}</div>
+                    <div className="s">BESS size × price per kWh</div>
+                  </div>
+                </div>
+
+                {/* CHARTS */}
+                <div className="charts charts-block no-print">
+                  <ChartsSection results={results} />
+                </div>
+
+                {/* DETAILS TABLE */}
+                <div className="table-title">Detailed metrics</div>
+                <table>
+                  <tbody>
+                    <DetailRow label="Load %" value={`${(results.loadPct * 100).toFixed(1)} %`} />
+                    <DetailRow label="Load (kW)" value={results.loadKW.toFixed(2)} />
+                    <DetailRow label="Fuel use (L/h) – interpolated" value={results.fuelLph.toFixed(4)} />
+                    <DetailRow label="BESS cycles per day" value={results.bessCyclesPerDay.toFixed(6)} />
+                    <DetailRow label="Daily BESS energy used (kWh)" value={results.dailyBESSEnergyKWh.toFixed(2)} />
+                    <DetailRow label="Diesel kWh per L" value={results.dieselKWhPerL.toFixed(6)} />
+                    <DetailRow label="Annual fuel use (L)" value={results.annualFuelOnlyLitres.toFixed(0)} />
+                    <DetailRow label="Annual fuel cost ($)" value={`$${formatMoney(results.annualFuelOnlyCost)}`} />
+                    <DetailRow label="Fuel saved per day (L)" value={results.fuelSavedPerDayLitres.toFixed(2)} />
+                    <DetailRow label="Annual fuel saved (L)" value={results.annualFuelSavingsLitres.toFixed(0)} />
+                    <DetailRow label="Annual fuel savings ($)" value={`$${formatMoney(results.annualFuelSavingsCost)}`} />
+                    <DetailRow label="5-year simple ROI" value={results.simpleFiveYearROI !== null ? `${results.simpleFiveYearROI.toFixed(0)} %` : "N/A"} />
+                    <DetailRow label="ROI (years)" value={results.paybackYears ? results.paybackYears.toFixed(2) : "N/A"} />
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
         </section>
       </div>
@@ -496,74 +255,10 @@ type InputFieldProps = {
 
 function InputField({ label, value, step, onChange }: InputFieldProps) {
   return (
-    <label style={{ fontSize: "0.85rem" }}>
-      <span
-        style={{
-          display: "block",
-          marginBottom: "0.2rem",
-          color: "#9ca3af",
-        }}
-      >
-        {label}
-      </span>
-      <input
-        type="number"
-        value={value}
-        step={step ?? "1"}
-        onChange={onChange}
-        style={{
-          width: "100%",
-          padding: "0.4rem 0.5rem",
-          borderRadius: "0.5rem",
-          border: "1px solid #374151",
-          background: "#020617",
-          color: "#e5e7eb",
-          fontSize: "0.9rem",
-        }}
-      />
+    <label>
+      <span>{label}</span>
+      <input type="number" value={value} step={step ?? "1"} onChange={onChange} />
     </label>
-  );
-}
-
-type ResultCardProps = {
-  title: string;
-  value: string;
-  subtitle?: string;
-};
-
-function ResultCard({ title, value, subtitle }: ResultCardProps) {
-  return (
-    <div
-      style={{
-        padding: "0.9rem",
-        borderRadius: "0.75rem",
-        border: "1px solid #1f2937",
-        background:
-          "radial-gradient(circle at top left, #0f766e33 0, #020617 55%)",
-      }}
-    >
-      <div style={{ fontSize: "0.8rem", color: "#9ca3af" }}>{title}</div>
-      <div
-        style={{
-          fontSize: "1.1rem",
-          fontWeight: 600,
-          marginTop: "0.2rem",
-        }}
-      >
-        {value}
-      </div>
-      {subtitle && (
-        <div
-          style={{
-            marginTop: "0.2rem",
-            fontSize: "0.75rem",
-            color: "#6b7280",
-          }}
-        >
-          {subtitle}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -575,34 +270,13 @@ type DetailRowProps = {
 function DetailRow({ label, value }: DetailRowProps) {
   return (
     <tr>
-      <td
-        style={{
-          padding: "0.25rem 0.5rem",
-          borderBottom: "1px solid #111827",
-          color: "#9ca3af",
-        }}
-      >
-        {label}
-      </td>
-      <td
-        style={{
-          padding: "0.25rem 0.5rem",
-          borderBottom: "1px solid #111827",
-          textAlign: "right",
-        }}
-      >
-        {value}
-      </td>
+      <td>{label}</td>
+      <td>{value}</td>
     </tr>
   );
 }
 
-type ChartsSectionProps = {
-  results: RoiOutputs;
-  isMobile: boolean;
-};
-
-function ChartsSection({ results, isMobile }: ChartsSectionProps) {
+function ChartsSection({ results }: { results: RoiOutputs }) {
   const baselineCost = results.annualFuelOnlyCost;
   const savings = results.annualFuelSavingsCost;
   const costWithBess = Math.max(baselineCost - savings, 0);
@@ -613,44 +287,17 @@ function ChartsSection({ results, isMobile }: ChartsSectionProps) {
   ];
 
   const barData = [
-    {
-      name: "Annual fuel cost",
-      Baseline: baselineCost,
-      "With BESS": costWithBess,
-    },
+    { name: "Annual fuel cost", Baseline: baselineCost, "With BESS": costWithBess },
   ];
 
-  const COLORS = ["#22c55e", "#f97316"];
+  // Powerlink-aligned colors
+  const COLORS = ["#0381D4", "#61CE70"];
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-        gap: "1.25rem",
-        marginBottom: "1.5rem",
-      }}
-    >
-      {/* Pie chart: savings vs remaining cost */}
-      <div
-        style={{
-          background: "#020617",
-          borderRadius: "0.75rem",
-          border: "1px solid #1f2937",
-          padding: "0.75rem",
-          minHeight: 260,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "0.9rem",
-            fontWeight: 600,
-            marginBottom: "0.5rem",
-          }}
-        >
-          Fuel cost vs savings (annual)
-        </div>
-        <ResponsiveContainer width="100%" height={210}>
+    <>
+      <div className="chart-card">
+        <div className="chart-title">Fuel cost vs savings (annual)</div>
+        <ResponsiveContainer width="100%" height={240}>
           <PieChart>
             <Pie
               data={pieData}
@@ -658,24 +305,17 @@ function ChartsSection({ results, isMobile }: ChartsSectionProps) {
               nameKey="name"
               cx="50%"
               cy="50%"
-              outerRadius={70}
-              label={(entry: any) =>
-                `${entry.name}: ${(entry.percent * 100).toFixed(0)}%`
-              }
+              outerRadius={90}
+              labelLine={false}
             >
-              {pieData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
+              {pieData.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip
               formatter={(value: any) => {
                 const v = Number(value);
-                return `$${v.toLocaleString(undefined, {
-                  maximumFractionDigits: 0,
-                })}/year`;
+                return `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}/year`;
               }}
             />
             <Legend />
@@ -683,47 +323,25 @@ function ChartsSection({ results, isMobile }: ChartsSectionProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Bar chart: baseline vs with BESS */}
-      <div
-        style={{
-          background: "#020617",
-          borderRadius: "0.75rem",
-          border: "1px solid #1f2937",
-          padding: "0.75rem",
-          minHeight: 260,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "0.9rem",
-            fontWeight: 600,
-            marginBottom: "0.5rem",
-          }}
-        >
-          Annual fuel cost comparison
-        </div>
-        <ResponsiveContainer width="100%" height={210}>
+      <div className="chart-card">
+        <div className="chart-title">Annual fuel cost comparison</div>
+        <ResponsiveContainer width="100%" height={240}>
           <BarChart data={barData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#111827" />
-            <XAxis dataKey="name" stroke="#9ca3af" />
-            <YAxis
-              stroke="#9ca3af"
-              tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
-            />
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis tickFormatter={(val) => `$${(Number(val) / 1000).toFixed(0)}k`} />
             <Tooltip
               formatter={(value: any) => {
                 const v = Number(value);
-                return `$${v.toLocaleString(undefined, {
-                  maximumFractionDigits: 0,
-                })}/year`;
+                return `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}/year`;
               }}
             />
             <Legend />
             <Bar dataKey="Baseline" fill="#f97316" />
-            <Bar dataKey="With BESS" fill="#22c55e" />
+            <Bar dataKey="With BESS" fill="#61CE70" />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </>
   );
 }
